@@ -4,47 +4,83 @@ import os
 from werkzeug.utils import secure_filename
 import uuid
 from datetime import datetime
-import json 
-from flask import render_template  # Añade esto al inicio
+import json
 
-@app.route('/')
-def serve_frontend():
-    return render_template('index.html')
-
-# PRIMERO: Definir la aplicación Flask
+# PRIMERO: Inicializar la aplicación Flask
 app = Flask(__name__)
-CORS(app)
+CORS(app)  # Permitir solicitudes desde el frontend
 
-# LUEGO: Configuración
+# Configuración
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-MAX_FILE_SIZE = 16 * 1024 * 1024
+MAX_FILE_SIZE = 16 * 1024 * 1024  # 16MB máximo
 DATA_FILE = 'data.json'
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
 
-# Crear directorio de uploads
+# Crear directorio de uploads si no existe
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Funciones auxiliares
+# Cargar datos iniciales
 def load_data():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
     else:
+        # Datos por defecto
         return {
             "characters": [
-                {"id": 1, "name": "El Director", "description": "El misterioso líder del circo...", "imageUrl": None},
-                {"id": 2, "name": "La Adivina", "description": "Ve el futuro en sus cartas...", "imageUrl": None},
-                {"id": 3, "name": "El Hombre de Goma", "description": "Puede contorsionarse...", "imageUrl": None},
-                {"id": 4, "name": "La Tragafuegos", "description": "Domina las llamas...", "imageUrl": None},
-                {"id": 5, "name": "El Forzudo", "description": "Su fuerza es legendaria...", "imageUrl": None}
+                {
+                    "id": 1,
+                    "name": "El Director",
+                    "description": "El misterioso líder del circo, siempre observando desde las sombras.",
+                    "imageUrl": None
+                },
+                {
+                    "id": 2,
+                    "name": "La Adivina",
+                    "description": "Ve el futuro en sus cartas, pero nunca revela su propio destino.",
+                    "imageUrl": None
+                },
+                {
+                    "id": 3,
+                    "name": "El Hombre de Goma",
+                    "description": "Puede contorsionarse de formas imposibles, pero a un precio terrible.",
+                    "imageUrl": None
+                },
+                {
+                    "id": 4,
+                    "name": "La Tragafuegos",
+                    "description": "Domina las llamas, pero lucha por controlar el fuego en su interior.",
+                    "imageUrl": None
+                },
+                {
+                    "id": 5,
+                    "name": "El Forzudo",
+                    "description": "Su fuerza es legendaria, pero cada demostración le cuesta parte de su humanidad.",
+                    "imageUrl": None
+                }
             ],
             "chapters": [
-                {"id": 1, "title": "Capítulo 1: La Llegada", "description": "El circo llega...", "panels": []},
-                {"id": 2, "title": "Capítulo 2: La Primera Función", "description": "", "panels": []},
-                {"id": 3, "title": "Capítulo 3: El Precio", "description": "", "panels": []}
+                {
+                    "id": 1,
+                    "title": "Capítulo 1: La Llegada",
+                    "description": "El circo llega a un pueblo desprevenido, anunciándose con carteles que aparecen como por arte de magia.",
+                    "panels": []
+                },
+                {
+                    "id": 2,
+                    "title": "Capítulo 2: La Primera Función",
+                    "description": "",
+                    "panels": []
+                },
+                {
+                    "id": 3,
+                    "title": "Capítulo 3: El Precio",
+                    "description": "",
+                    "panels": []
+                }
             ],
             "fanarts": []
         }
@@ -54,9 +90,10 @@ def save_data(data):
         json.dump(data, f, ensure_ascii=False, indent=4)
 
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# SOLO DESPUÉS: Definir las rutas
+# SOLO AHORA: Definir las rutas (después de crear 'app')
 @app.route('/data', methods=['GET'])
 def get_data():
     return jsonify(load_data())
@@ -77,6 +114,7 @@ def upload_file():
         return jsonify({'error': 'No selected file'}), 400
     
     if file and allowed_file(file.filename):
+        # Generar nombre único para el archivo
         file_ext = file.filename.rsplit('.', 1)[1].lower()
         unique_filename = f"{uuid.uuid4().hex}.{file_ext}"
         filename = secure_filename(unique_filename)
@@ -125,8 +163,39 @@ def list_images():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# Ruta principal - DEBE ESTAR AL FINAL
+@app.route('/')
+def serve_frontend():
+    # Aquí vas a pegar TODO tu código HTML
+    # Pero por ahora, usemos una página simple para probar
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>El Circo de la Perdición</title>
+        <style>
+            body {
+                background-color: #0d0d0d;
+                color: #d9d9d9;
+                font-family: Arial, sans-serif;
+                text-align: center;
+                padding: 50px;
+            }
+            h1 {
+                color: #8c001a;
+                font-size: 3em;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>¡EL CIRCO DE LA PERDICIÓN!</h1>
+        <p>La aplicación está funcionando correctamente.</p>
+        <p>Prueba la API: <a href="/data">/data</a></p>
+    </body>
+    </html>
+    """
 
-# Finalmente: Ejecutar la aplicación
+# Esto debe estar al final del archivo
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
